@@ -1,0 +1,11 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: voyara
+      POSTGRES_PASSWORD: voyara
+      POSTGRES_DB: voyara
+    ports: ["5433:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+volumes:
+  pgdata:

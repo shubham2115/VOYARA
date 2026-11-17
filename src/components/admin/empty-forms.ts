@@ -1,0 +1,5 @@
+import type { DestinationFormData } from "./destination-form";
+import type { PackageFormData } from "./package-form";
+
+export const emptyDestination: DestinationFormData = { name: "", slug: "", state: "", city: "", tagline: "", description: "", coverImage: "", images: [], attractions: "", bestTimeToVisit: "", howToReach: "", budgetMin: "", budgetMax: "", recommendedDays: "", latitude: "", longitude: "", categoryId: "", isPublished: true, isFeatured: false };
+export const emptyPackage: PackageFormData = { name: "", slug: "", summary: "", destinationId: "", coverImage: "", images: [], durationDays: 4, durationNights: 3, price: 0, discountedPrice: "", tier: "PREMIUM", hotelCategory: "STANDARD", travelTypes: [], themes: "", departureCities: "", hotelInfo: "", transportInfo: "", activities: "", importantInfo: "", cancellationPolicy: "", maxGroupSize: "", isAvailable: true, isPublished: true, isFeatured: false, itinerary: [{ title: "", description: "", meals: ["BREAKFAST"], stay: "" }], inclusions: "", exclusions: "" };
