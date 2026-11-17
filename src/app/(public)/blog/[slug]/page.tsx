@@ -3,13 +3,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { DATABASE_ENABLED } from "@/lib/config";
+import { mockGetBlog } from "@/server/mock/data";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 type Props = { params: Promise<{ slug: string }> };
 
-const getPost = (slug: string) =>
-  db.blog.findFirst({ where: { slug, isPublished: true, deletedAt: null }, include: { category: true, destination: { select: { name: true, slug: true } } } });
+const getPost = async (slug: string) =>
+  !DATABASE_ENABLED ? mockGetBlog(slug) : db.blog.findFirst({ where: { slug, isPublished: true, deletedAt: null }, include: { category: true, destination: { select: { name: true, slug: true } } } });
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const b = await getPost((await params).slug);

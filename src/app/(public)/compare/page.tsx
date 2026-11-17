@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { db } from "@/lib/db";
+import { DATABASE_ENABLED } from "@/lib/config";
+import { mockAllPackages } from "@/server/mock/data";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/misc";
 import { formatINR, humanize } from "@/lib/utils";
@@ -9,9 +11,12 @@ import { formatINR, humanize } from "@/lib/utils";
 export const metadata: Metadata = { title: "Compare Packages" };
 export const dynamic = "force-dynamic";
 
+const loadPackages = (slugs: string[]) =>
+  db.tourPackage.findMany({ where: { slug: { in: slugs }, isPublished: true, deletedAt: null }, include: { destination: { select: { name: true } }, inclusions: true, exclusions: true } });
+
 export default async function ComparePage({ searchParams }: { searchParams: Promise<{ slugs?: string }> }) {
   const slugs = [...new Set((await searchParams).slugs?.split(",").map((s) => s.trim()).filter(Boolean) ?? [])].slice(0, 3);
-  const pkgs = slugs.length ? await db.tourPackage.findMany({ where: { slug: { in: slugs }, isPublished: true, deletedAt: null }, include: { destination: { select: { name: true } }, inclusions: true, exclusions: true } }) : [];
+  const pkgs = !slugs.length ? [] : !DATABASE_ENABLED ? (mockAllPackages().filter((p) => slugs.includes(p.slug)) as unknown as Awaited<ReturnType<typeof loadPackages>>) : await loadPackages(slugs);
   const ordered = slugs.map((s) => pkgs.find((p) => p.slug === s)).filter((p): p is (typeof pkgs)[number] => !!p);
   if (ordered.length < 2)
     return <div className="container py-14"><h1 className="mb-6 text-4xl">Compare packages</h1><EmptyState title="Pick at least two packages" description="Use the Compare button on package cards (up to three), then open the comparison." action={<Button asChild variant="gold"><Link href="/packages">Browse packages</Link></Button>} /></div>;

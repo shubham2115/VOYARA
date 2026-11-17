@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { Role } from "@prisma/client";
 import { auth } from "@/auth";
 import { db } from "./db";
+import { DATABASE_ENABLED } from "./config";
 import { ApiError } from "./api";
 import { can, type Permission } from "./rbac";
 
@@ -10,6 +11,7 @@ export type SessionUser = { id: string; name: string; email: string; role: Role 
 
 /** Authoritative current user: role and active flag are re-read from the DB, never from the client/JWT alone. */
 export async function getCurrentUser(): Promise<SessionUser | null> {
+  if (!DATABASE_ENABLED) return null; // no accounts without a database
   const session = await auth();
   if (!session?.user?.id) return null;
   const u = await db.user.findUnique({

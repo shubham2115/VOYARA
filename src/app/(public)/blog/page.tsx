@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { DATABASE_ENABLED } from "@/lib/config";
+import { mockBlogCategories, mockListBlogs } from "@/server/mock/data";
 import { EmptyState, Pagination } from "@/components/ui/misc";
 import { formatDate } from "@/lib/utils";
 
@@ -13,11 +15,13 @@ export default async function BlogPage({ searchParams }: { searchParams: Promise
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const where = { isPublished: true, deletedAt: null, publishedAt: { lte: new Date() }, ...(sp.category && { category: { slug: sp.category } }) };
-  const [posts, total, cats] = await Promise.all([
-    db.blog.findMany({ where, orderBy: { publishedAt: "desc" }, skip: (page - 1) * SIZE, take: SIZE, include: { category: true } }),
-    db.blog.count({ where }),
-    db.blogCategory.findMany({ orderBy: { name: "asc" } }),
-  ]);
+  const [posts, total, cats] = DATABASE_ENABLED
+    ? await Promise.all([
+        db.blog.findMany({ where, orderBy: { publishedAt: "desc" }, skip: (page - 1) * SIZE, take: SIZE, include: { category: true } }),
+        db.blog.count({ where }),
+        db.blogCategory.findMany({ orderBy: { name: "asc" } }),
+      ])
+    : (() => { const m = mockListBlogs(sp.category, page, SIZE); return [m.posts, m.total, mockBlogCategories()] as const; })();
   return (
     <div className="container py-12">
       <p className="eyebrow">Travel blog</p>

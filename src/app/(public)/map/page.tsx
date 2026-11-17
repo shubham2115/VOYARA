@@ -1,15 +1,22 @@
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
+import { DATABASE_ENABLED } from "@/lib/config";
+import { mockAllDestinations } from "@/server/mock/data";
 import { IndiaMap } from "@/components/site/india-map";
 
 export const metadata: Metadata = { title: "Explore India on the Map" };
 export const dynamic = "force-dynamic";
 
-export default async function MapPage() {
-  const dests = await db.destination.findMany({
+const loadDests = () =>
+  db.destination.findMany({
     where: { isPublished: true, deletedAt: null }, orderBy: { name: "asc" },
     select: { slug: true, name: true, state: true, packages: { where: { isPublished: true, deletedAt: null }, select: { slug: true, name: true, price: true, discountedPrice: true } } },
   });
+
+export default async function MapPage() {
+  const dests = !DATABASE_ENABLED
+    ? (mockAllDestinations().sort((a, b) => a.name.localeCompare(b.name)) as unknown as Awaited<ReturnType<typeof loadDests>>)
+    : await loadDests();
   return (
     <div className="container py-12">
       <p className="eyebrow">Interactive map</p><h1 className="mt-2 text-4xl md:text-5xl">Explore India by state</h1>

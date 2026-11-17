@@ -1,12 +1,16 @@
 import type { MetadataRoute } from "next";
 import { db } from "@/lib/db";
+import { DATABASE_ENABLED } from "@/lib/config";
+import { mockAllDestinations, mockAllPackages, mockLatestBlogs } from "@/server/mock/data";
 
 export const dynamic = "force-dynamic";
 const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const live = { isPublished: true, deletedAt: null } as const;
-  const [d, p, b] = await Promise.all([
+  const [d, p, b] = !DATABASE_ENABLED
+    ? [mockAllDestinations(), mockAllPackages(), mockLatestBlogs(100)]
+    : await Promise.all([
     db.destination.findMany({ where: live, select: { slug: true, updatedAt: true } }),
     db.tourPackage.findMany({ where: live, select: { slug: true, updatedAt: true } }),
     db.blog.findMany({ where: live, select: { slug: true, updatedAt: true } }),

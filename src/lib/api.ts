@@ -3,6 +3,8 @@ import { ZodError, type ZodTypeAny, type z } from "zod";
 import { Prisma } from "@prisma/client";
 import { clientIp, rateLimit } from "./rate-limit";
 
+import { DatabaseDisabledError } from "./config";
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -21,6 +23,7 @@ export const fail = (status: number, message: string, details?: unknown) =>
 
 export function handleError(e: unknown) {
   if (e instanceof ApiError) return fail(e.status, e.message, e.details);
+  if (e instanceof DatabaseDisabledError) return fail(503, "This feature is temporarily unavailable.");
   if (e instanceof ZodError) return fail(422, "Validation failed", e.flatten().fieldErrors);
   if (e instanceof Prisma.PrismaClientKnownRequestError) {
     if (e.code === "P2002") return fail(409, "A record with these details already exists");

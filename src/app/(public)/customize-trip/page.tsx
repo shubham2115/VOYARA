@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
+import { DATABASE_ENABLED } from "@/lib/config";
+import { listDestinationOptions } from "@/server/services/catalog";
+import { mockGetDestination, mockGetPackage } from "@/server/mock/data";
 import { CustomizeWizard } from "@/components/site/customize-wizard";
 import { getCurrentUser } from "@/lib/session";
 
@@ -9,10 +12,10 @@ export const dynamic = "force-dynamic";
 export default async function CustomizePage({ searchParams }: { searchParams: Promise<{ destination?: string; package?: string }> }) {
   const sp = await searchParams;
   const [dests, user, pkg, dest] = await Promise.all([
-    db.destination.findMany({ where: { isPublished: true, deletedAt: null }, select: { name: true }, orderBy: { name: "asc" } }),
+    listDestinationOptions(),
     getCurrentUser(),
-    sp.package ? db.tourPackage.findUnique({ where: { slug: sp.package }, select: { name: true, destination: { select: { name: true } } } }) : null,
-    sp.destination ? db.destination.findUnique({ where: { slug: sp.destination }, select: { name: true } }) : null,
+    !sp.package ? null : !DATABASE_ENABLED ? mockGetPackage(sp.package) : db.tourPackage.findUnique({ where: { slug: sp.package }, select: { name: true, destination: { select: { name: true } } } }),
+    !sp.destination ? null : !DATABASE_ENABLED ? mockGetDestination(sp.destination) : db.destination.findUnique({ where: { slug: sp.destination }, select: { name: true } }),
   ]);
   return (
     <div className="container max-w-3xl py-12">

@@ -1,13 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Headset, Palette, ShieldCheck, Tag, Wallet, Star } from "lucide-react";
-import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { DestinationCard, PackageCard } from "@/components/site/cards";
 import { HeroSearch } from "@/components/site/hero-search";
 import { NewsletterForm } from "@/components/site/newsletter-form";
 import { Reveal, SectionHeading } from "@/components/site/reveal";
-import { getSetting } from "@/server/services/catalog";
+import { getHomeData, getSetting } from "@/server/services/catalog";
 import { currentWishlistIds } from "@/server/services/wishlist";
 import { formatDate } from "@/lib/utils";
 
@@ -16,22 +15,13 @@ export const dynamic = "force-dynamic";
 const icons = [Headset, Wallet, ShieldCheck, Palette];
 
 export default async function HomePage() {
-  const live = { isPublished: true, deletedAt: null } as const;
-  const [hero, why, destinations, trending, luxury, categories, reviews, coupons, blogs, destOptions, pkgs, wished] = await Promise.all([
+  const [hero, why, home, wished] = await Promise.all([
     getSetting("site.hero", { heading: "Discover India, One Journey at a Time", subtitle: "" }),
     getSetting<{ title: string; text: string }[]>("site.whyUs", []),
-    db.destination.findMany({ where: live, orderBy: { popularity: "desc" }, take: 8, include: { category: { select: { name: true } }, _count: { select: { packages: { where: live } } } } }),
-    db.tourPackage.findMany({ where: { ...live, isAvailable: true }, orderBy: { popularity: "desc" }, take: 6, include: { destination: { select: { name: true, state: true } } } }),
-    db.tourPackage.findMany({ where: { ...live, isAvailable: true, tier: { in: ["LUXURY", "PREMIUM"] }, isFeatured: true }, take: 3, include: { destination: { select: { name: true } } } }),
-    db.destinationCategory.findMany({ orderBy: { sortOrder: "asc" }, include: { destinations: { where: live, take: 1, select: { coverImage: true } }, _count: { select: { destinations: true } } } }),
-    db.review.findMany({ where: { status: "APPROVED" }, orderBy: { createdAt: "desc" }, take: 3, include: { user: { select: { name: true } }, package: { select: { name: true } } } }),
-    db.coupon.findMany({ where: { isActive: true, showOnHome: true, OR: [{ validUntil: null }, { validUntil: { gt: new Date() } }] }, take: 3 }),
-    db.blog.findMany({ where: { ...live, publishedAt: { lte: new Date() } }, orderBy: { publishedAt: "desc" }, take: 3, include: { category: true } }),
-    db.destination.findMany({ where: live, select: { name: true, slug: true }, orderBy: { name: "asc" } }),
-    db.tourPackage.findMany({ where: live, select: { departureCities: true } }),
+    getHomeData(),
     currentWishlistIds(),
   ]);
-  const cities = [...new Set(pkgs.flatMap((p) => p.departureCities))].sort();
+  const { destinations, trending, luxury, categories, reviews, coupons, blogs, destOptions, cities } = home;
   const heroImg = destinations[0]?.coverImage;
 
   return (
